@@ -49,7 +49,7 @@ Singleton {
                 if (line.includes("changed") || line.includes("Props")) {
                     if (root.monitorEnabled) {
                         getVolumeProcess.running = true
-                        getIsMutedProcess.running = true
+                        // getIsMutedProcess.running = true
                     }
                 }
             }

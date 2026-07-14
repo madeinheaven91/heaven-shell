@@ -14,8 +14,109 @@ Item {
     property string connectingSSID: ""
     property string connectionError: ""
     property bool isEthernetConnected: false
+    property string ipAddress: ""
+    property string gateway: ""
+    // active physical interface (ethernet preferred over wifi)
+    property string activeDevice: ""
+    // bytes per second on activeDevice
+    property real downloadSpeed: 0
+    property real uploadSpeed: 0
+
+    // interface changed: old byte counters are meaningless, drop the baseline
+    onActiveDeviceChanged: _lastSampleTime = 0
     property var _scanResults: []
     property var _knownList: []
+    property real _rxAcc: 0
+    property real _txAcc: 0
+    property real _lastRx: 0
+    property real _lastTx: 0
+    property real _lastSampleTime: 0
+
+    Process {
+        id: netSpeedProcess
+        command: ["cat", "/proc/net/dev"]
+        onStarted: {
+            service._rxAcc = 0;
+            service._txAcc = 0;
+        }
+        stdout: SplitParser {
+            onRead: data => {
+                const line = data.trim();
+                const colonIdx = line.indexOf(':');
+                if (colonIdx === -1)
+                    return;
+                const iface = line.substring(0, colonIdx).trim();
+                if (service.activeDevice === "") {
+                    // device not known yet, fall back to everything but lo
+                    if (iface === 'lo')
+                        return;
+                } else if (iface !== service.activeDevice) {
+                    return;
+                }
+                const fields = line.substring(colonIdx + 1).trim().split(/\s+/);
+                service._rxAcc += parseInt(fields[0]) || 0;
+                service._txAcc += parseInt(fields[8]) || 0;
+            }
+        }
+        onExited: {
+            const now = Date.now();
+            if (service._lastSampleTime > 0) {
+                const dt = (now - service._lastSampleTime) / 1000;
+                if (dt > 0) {
+                    service.downloadSpeed = Math.max(0, (service._rxAcc - service._lastRx) / dt);
+                    service.uploadSpeed = Math.max(0, (service._txAcc - service._lastTx) / dt);
+                }
+            }
+            service._lastRx = service._rxAcc;
+            service._lastTx = service._txAcc;
+            service._lastSampleTime = now;
+        }
+    }
+
+    Timer {
+        interval: 2000
+        running: true
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: netSpeedProcess.running = true
+    }
+
+    Process {
+        id: ipProcess
+        command: ["nmcli", "-t", "-f", "IP4.ADDRESS,IP4.GATEWAY", "device", "show"]
+        property bool _ipFound: false
+        property bool _gatewayFound: false
+        onStarted: {
+            _ipFound = false;
+            _gatewayFound = false;
+        }
+        stdout: SplitParser {
+            onRead: data => {
+                // lines look like "IP4.ADDRESS[1]:192.168.1.5/24" or "IP4.GATEWAY:10.0.0.1"
+                const line = data.trim();
+                const colonIdx = line.indexOf(':');
+                if (colonIdx === -1)
+                    return;
+                const field = line.substring(0, colonIdx);
+                const value = line.substring(colonIdx + 1).trim();
+                if (value === "")
+                    return;
+                if (!ipProcess._ipFound && field.startsWith("IP4.ADDRESS")) {
+                    service.ipAddress = value.split('/')[0];
+                    ipProcess._ipFound = true;
+                } else if (!ipProcess._gatewayFound && field === "IP4.GATEWAY") {
+                    service.gateway = value;
+                    ipProcess._gatewayFound = true;
+                }
+            }
+        }
+        onExited: {
+            if (!ipProcess._ipFound)
+                service.ipAddress = "";
+            if (!ipProcess._gatewayFound)
+                service.gateway = "";
+        }
+    }
 
     Process {
         id: connectionProcess
@@ -89,22 +190,33 @@ Item {
     Process {
         id: ethernetProcess
         command: ["nmcli", "-t", "-f", "DEVICE,TYPE,STATE", "device"]
+        property string _ethernetDevice: ""
+        property string _wifiDevice: ""
+        onStarted: {
+            _ethernetDevice = "";
+            _wifiDevice = "";
+        }
         stdout: SplitParser {
             onRead: data => {
-                service.isEthernetConnected = false;
-                const lines = data.split('\n');
-                for (const line of lines) {
-                    const parts = line.split(':');
-                    if (parts.length >= 3) {
-                        const type = parts[1];
-                        const state = parts[2];
-                        if (type === 'ethernet' && state === 'connected') {
-                            service.isEthernetConnected = true;
-                            break;
-                        }
-                    }
-                }
+                const parts = data.trim().split(':');
+                if (parts.length < 3)
+                    return;
+                const device = parts[0];
+                const type = parts[1];
+                const state = parts[2];
+                if (state !== 'connected')
+                    return;
+                if (type === 'ethernet' && ethernetProcess._ethernetDevice === "")
+                    ethernetProcess._ethernetDevice = device;
+                else if (type === 'wifi' && ethernetProcess._wifiDevice === "")
+                    ethernetProcess._wifiDevice = device;
             }
+        }
+        onExited: {
+            service.isEthernetConnected = ethernetProcess._ethernetDevice !== "";
+            service.activeDevice = ethernetProcess._ethernetDevice !== ""
+                ? ethernetProcess._ethernetDevice
+                : ethernetProcess._wifiDevice;
         }
     }
 
@@ -213,6 +325,7 @@ Item {
         statusProcess.running = true;
         connectedProcess.running = true;
         ethernetProcess.running = true;
+        ipProcess.running = true;
 
         if (isEnabled) {
             knownProcess.running = true;

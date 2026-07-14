@@ -20,7 +20,7 @@ Rectangle {
 			model: niri.workspaces
 
 			Text {
-				property var ws: niri.workspaces.values.find(w => w.id === index)
+				property var ws: niri.workspaces.values?.find(w => w.id === index)
 				property bool isActive: model.isActive
 				text: index
 				color: isActive ? root.colorFg : root.colorFgInactive
