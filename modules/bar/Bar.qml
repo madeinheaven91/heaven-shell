@@ -81,6 +81,7 @@ PanelWindow {
 			
 			// Loader { active: true; sourceComponent: Power {} }
             Loader { active: true; sourceComponent: Power {} }
+            Loader { active: true; sourceComponent: Language {} }
         }
     }
 }
