@@ -1,40 +1,41 @@
 import QtQuick
 import QtQuick.Layouts
-import Quickshell
+import Niri
+import "../../../config"
 
-Rectangle {
-	id: workspaceLayout
-    implicitWidth: innerRow.implicitWidth
-    implicitHeight: bar.totalHeight - 4
-	color: root.colorBg
+RowLayout {
+    id: workspacesRoot
+    spacing: 6
 
-	RowLayout {
-		id: innerRow
-		spacing: 10
-        anchors {
-            verticalCenter: parent.verticalCenter
-			centerIn: parent
+    Niri {
+        id: niri
+        Component.onCompleted: connect()
+    }
+
+    Repeater {
+        model: niri.workspaces
+
+        delegate: Rectangle {
+            id: ws
+            required property var model
+
+            implicitWidth: model.isFocused ? 22 : 8
+            implicitHeight: 8
+            radius: height / 2
+            color: model.isFocused
+                   ? Theme.colorFg
+                   : (model.isActive ? Qt.alpha(Theme.colorFg, 0.55)
+                                     : Qt.alpha(Theme.colorFg, 0.25))
+
+            Behavior on implicitWidth {
+                NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                onClicked: niri.focusWorkspaceById(ws.model.id)
+            }
         }
-
-		Repeater {
-			model: niri.workspaces
-
-			Text {
-				property var ws: niri.workspaces.values?.find(w => w.id === index)
-				property bool isActive: model.isActive
-				text: index
-				color: isActive ? root.colorFg : root.colorFgInactive
-				font { 
-					family: root.fontFamily
-					pixelSize: root.fontSize
-				}
-
-				MouseArea {
-					anchors.fill: parent
-		            cursorShape: Qt.PointingHandCursor
-		            onClicked: niri.focusWorkspaceById(model.id)
-				}
-			}
-		}
-	}
+    }
 }

@@ -1,17 +1,21 @@
 import QtQuick
 import QtQuick.Layouts
-import "../components"
+import Quickshell
+import "../../../services"
+import "../../../config"
 
 Rectangle {
 	id: mprisRoot
-	property var service
-	property int charLimit: 30
+	property int charLimit: 64
+	readonly property var service: mprisService
 	readonly property var player: service.activePlayer
 
 	implicitWidth: inner.implicitWidth
-	implicitHeight: bar.totalHeight - 4
+	implicitHeight: inner.implicitHeight
 	color: "transparent"
 	visible: player !== null && inner.text !== ""
+
+	MprisService { id: mprisService }
 
 	function formatTime(seconds) {
 		if (seconds === undefined || isNaN(seconds) || seconds < 0)
@@ -23,11 +27,12 @@ Rectangle {
 
 	Text {
 		id: inner
-		anchors.verticalCenter: parent.verticalCenter
-		font { family: root.fontFamily; pixelSize: root.fontSize }
-		color: mprisRoot.player && mprisRoot.player.isPlaying ? root.colorFg : root.colorFgInactive
+		anchors.centerIn: parent
+        font: Theme.text
+		color: mprisRoot.player && mprisRoot.player.isPlaying
+			   ? Theme.colorFg : Qt.alpha(Theme.colorFg, 0.5)
 		text: {
-			var t = service.fullText;
+			var t = mprisService.title;
 			if (t.length > mprisRoot.charLimit)
 				t = t.substring(0, mprisRoot.charLimit) + "...";
 			return t;
@@ -48,7 +53,7 @@ Rectangle {
 	onHoveredChanged: {
 		if (hovered) {
 			hideTimer.stop();
-			popup.show = true;
+			popup.visible = true;
 		} else {
 			hideTimer.restart();
 		}
@@ -57,91 +62,108 @@ Rectangle {
 	Timer {
 		id: hideTimer
 		interval: 300
-		onTriggered: popup.show = false
+		onTriggered: popup.visible = false
 	}
 
 	// player.position only updates on seek; poke it while the popup is visible
 	Timer {
-		running: popup.show && mprisRoot.player !== null && mprisRoot.player.isPlaying
+		running: popup.visible && mprisRoot.player !== null && mprisRoot.player.isPlaying
 		interval: 1000
 		repeat: true
 		triggeredOnStart: true
 		onTriggered: mprisRoot.player.positionChanged()
 	}
 
-	Tooltip {
+	PopupWindow {
 		id: popup
-		target: mprisRoot
-		horizontalAlignment: "screen-left"
-		fixedWidth: 400
+		visible: false
+		color: "transparent"
 
-		ColumnLayout {
-			spacing: 4
+		anchor {
+			item: mprisRoot
+			rect.x: (mprisRoot.width - popup.implicitWidth) / 2
+			rect.y: mprisRoot.height + 6
+		}
+
+		implicitWidth: 400
+		implicitHeight: content.implicitHeight + 24
+
+		Rectangle {
+			anchors.fill: parent
+			radius: 8
+			color: "#ee2b2b2b"
 
 			HoverHandler { id: popupHover }
 
-			Text {
-				Layout.alignment: Qt.AlignHCenter
-				Layout.maximumWidth: popup.fixedWidth - 20
-				elide: Text.ElideRight
-				text: mprisRoot.player ? (mprisRoot.player.trackTitle || "Unknown") : ""
-				color: root.colorFg
-				font { family: root.fontFamily; pixelSize: root.fontSize - 2; bold: true }
-			}
-
-			Text {
-				visible: text !== ""
-				Layout.alignment: Qt.AlignHCenter
-				Layout.maximumWidth: popup.fixedWidth - 20
-				elide: Text.ElideRight
-				text: mprisRoot.player ? (mprisRoot.player.trackArtist || "") : ""
-				color: root.colorFgInactive
-				font { family: root.fontFamily; pixelSize: root.fontSize - 4 }
-			}
-
-			Text {
-				Layout.alignment: Qt.AlignHCenter
-				text: mprisRoot.player
-					? mprisRoot.formatTime(mprisRoot.player.position) + " / " + mprisRoot.formatTime(mprisRoot.player.length)
-					: ""
-				color: root.colorFg
-				font { family: root.fontFamily; pixelSize: root.fontSize - 4 }
-			}
-
-			RowLayout {
-				Layout.alignment: Qt.AlignHCenter
-				spacing: 20
+			ColumnLayout {
+				id: content
+				anchors.centerIn: parent
+				width: parent.width - 20
+				spacing: 4
 
 				Text {
-					text: "󰒮"
-					color: mprisRoot.player && mprisRoot.player.canGoPrevious ? root.colorFg : root.colorFgInactive
-					font { family: root.fontFamily; pixelSize: root.fontSize }
-					MouseArea {
-						anchors.fill: parent
-						cursorShape: Qt.PointingHandCursor
-						onClicked: mprisRoot.player.previous()
-					}
+					Layout.alignment: Qt.AlignHCenter
+					Layout.maximumWidth: popup.implicitWidth - 20
+					elide: Text.ElideRight
+					text: mprisRoot.player ? (mprisRoot.player.trackTitle || "Unknown") : ""
+					color: "#ffffff"
+					font { family: Theme.textFont; pixelSize: Theme.textSize; bold: true }
 				}
 
 				Text {
-					text: mprisRoot.player && mprisRoot.player.isPlaying ? "󰏤" : "󰐊"
-					color: root.colorFg
-					font { family: root.fontFamily; pixelSize: root.fontSize }
-					MouseArea {
-						anchors.fill: parent
-						cursorShape: Qt.PointingHandCursor
-						onClicked: mprisRoot.player.togglePlaying()
-					}
+					visible: text !== ""
+					Layout.alignment: Qt.AlignHCenter
+					Layout.maximumWidth: popup.implicitWidth - 20
+					elide: Text.ElideRight
+					text: mprisRoot.player ? (mprisRoot.player.trackArtist || "") : ""
+					color: Qt.alpha("#ffffff", 0.6)
+					font { family: Theme.textFont; pixelSize: Theme.textSize - 4 }
 				}
 
 				Text {
-					text: "󰒭"
-					color: mprisRoot.player && mprisRoot.player.canGoNext ? root.colorFg : root.colorFgInactive
-					font { family: root.fontFamily; pixelSize: root.fontSize }
-					MouseArea {
-						anchors.fill: parent
-						cursorShape: Qt.PointingHandCursor
-						onClicked: mprisRoot.player.next()
+					Layout.alignment: Qt.AlignHCenter
+					text: mprisRoot.player
+						? mprisRoot.formatTime(mprisRoot.player.position) + " / " + mprisRoot.formatTime(mprisRoot.player.length)
+						: ""
+					color: "#ffffff"
+					font { family: Theme.textFont; pixelSize: Theme.textSize - 4 }
+				}
+
+				RowLayout {
+					Layout.alignment: Qt.AlignHCenter
+					spacing: 20
+
+					Text {
+						text: "󰒮"
+						color: mprisRoot.player && mprisRoot.player.canGoPrevious ? "#ffffff" : Qt.alpha("#ffffff", 0.4)
+                        font: Theme.icon
+						MouseArea {
+							anchors.fill: parent
+							cursorShape: Qt.PointingHandCursor
+							onClicked: if (mprisRoot.player) mprisRoot.player.previous()
+						}
+					}
+
+					Text {
+						text: mprisRoot.player && mprisRoot.player.isPlaying ? "󰏤" : "󰐊"
+						color: "#ffffff"
+                        font: Theme.icon
+						MouseArea {
+							anchors.fill: parent
+							cursorShape: Qt.PointingHandCursor
+							onClicked: if (mprisRoot.player) mprisRoot.player.togglePlaying()
+						}
+					}
+
+					Text {
+						text: "󰒭"
+						color: mprisRoot.player && mprisRoot.player.canGoNext ? "#ffffff" : Qt.alpha("#ffffff", 0.4)
+                        font: Theme.icon
+						MouseArea {
+							anchors.fill: parent
+							cursorShape: Qt.PointingHandCursor
+							onClicked: if (mprisRoot.player) mprisRoot.player.next()
+						}
 					}
 				}
 			}

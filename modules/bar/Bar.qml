@@ -2,86 +2,66 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import "./modules"
-import "./components"
+import "../../config"
 
 PanelWindow {
     id: bar
-	property int padding: 10
-	property int borderWidth: 2
-	property int totalHeight: 30
 
     anchors {
         top: true
-        right: true
         left: true
+        right: true
     }
-	margins {
-		top: 4
-		right: 4
-		left: 4
-	}
-    implicitHeight: bar.totalHeight
-
+    implicitHeight: 32
     color: "transparent"
 
     Rectangle {
-		id: statusBar
-
-        color: root.colorBg
         anchors.fill: parent
-        topRightRadius: root.borderRadius
-        bottomRightRadius: root.borderRadius
-        bottomLeftRadius: root.borderRadius
-        topLeftRadius: root.borderRadius
-		border.width: bar.borderWidth
+        color: Theme.colorBar
 
         // left
         RowLayout {
             anchors {
                 left: parent.left
-                leftMargin: 25
+                leftMargin: 24
                 verticalCenter: parent.verticalCenter
             }
-            spacing: 25
+            spacing: 24
 
-			Loader { active: true; sourceComponent: 
-				Workspaces {}
-			}
-			Loader { active: true; sourceComponent: 
-				Mpris {
-					service: MprisService{}
-				}
-			}
+            Text {
+                text: "\uf179"
+                color: Theme.colorFg
+                font.family: Theme.iconFont
+                font.pixelSize: Theme.bigIconSize
+            }
+
+            Workspaces {}
         }
+
 
         // center
         RowLayout {
-            anchors {
-                horizontalCenter: parent.horizontalCenter
-                verticalCenter: parent.verticalCenter
-            }
+            anchors.centerIn: parent
 
-            Loader { active: true; sourceComponent: Time {} }
-
+            Mpris {}
         }
+
 
         // right
         RowLayout {
             anchors {
-                verticalCenter: parent.verticalCenter
                 right: parent.right
-                rightMargin: 25
+                rightMargin: 24
+                verticalCenter: parent.verticalCenter
             }
-            spacing: 25
+            spacing: 24
 
-            Loader { active: true; sourceComponent: Tray { window: bar } }
-            Loader { active: true; sourceComponent: Volume { service: VolumeService {} } }
-            Loader { active: true; sourceComponent: WifiComponent { service: WifiService {} } }
-			// Text { text: "|"; font { pixelSize: root.fontSize; family: root.fontFamily } }
-			
-			// Loader { active: true; sourceComponent: Power {} }
-            Loader { active: true; sourceComponent: Power {} }
-            Loader { active: true; sourceComponent: Language {} }
+            Tray {}
+            Battery {}
+            Wifi {}
+            Volume {}
+            Settings {}
+            Time {}
         }
     }
 }

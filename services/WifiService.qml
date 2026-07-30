@@ -2,7 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 
-Item {
+Singleton {
     id: service
 
     property bool typing: false
