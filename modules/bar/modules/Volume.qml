@@ -2,66 +2,66 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
-import Quickshell.Services.UPower
+import "../components"
+import "../../../services"
+import "../../../config"
 
-Rectangle {
-	property var service
-
-    implicitWidth: inner.implicitWidth
-    implicitHeight: bar.totalHeight - 4
-	color: "transparent"
-
-    Text {
-		id: inner
-        anchors {
-            verticalCenter: parent.verticalCenter
+MouseArea {
+    id: root
+    implicitWidth: row.implicitWidth
+    implicitHeight: row.implicitHeight
+    acceptedButtons: Qt.LeftButton | Qt.RightButton
+    cursorShape: Qt.PointingHandCursor
+    onClicked: mouse => {
+        if (mouse.button === Qt.LeftButton) {
+            toggleMuteProcess.running = true;
+        } else {
+            pavucontrolProcess.running = true;
         }
-        color: root.colorFg
-        font.family: root.fontFamily
-        font.pixelSize: root.fontSize
+    }
 
-		text: text()
+    RowLayout {
+		id: row
 
-		MouseArea {
-			anchors.fill: parent
-			acceptedButtons: Qt.LeftButton | Qt.RightButton
-			cursorShape: Qt.PointingHandCursor
-			onClicked: mouse => {
-				if (mouse.button === Qt.LeftButton) {
-					toggleMuteProcess.running = true;
-				} else {
-					pavucontrolProcess.running = true;
-				}
-			}
-		}
+        Text {
+            text: icon();
+            color: BarTheme.colorFg
+            font: Theme.icon
+        }
+        Text {
+            text: Number(service.volume * 100).toFixed(0) + "%"
+            color: BarTheme.colorFg
+            font: Theme.boldText
+        }
+    }
 
-		function text() {
-			var icon = ""
-			var volume = ""
-			if (service.isMuted) {
-				icon = "󰝟";
-			} else {
-				if (service.volume < 0.2) {
-					icon = "󰕿";
-				} else if (service.volume < 0.6) {
-					icon = "󰖀";
-				} else {
-					icon = "󰕾";
-				}
-			}	
-			return icon + " " + Number(service.volume * 100).toFixed(0) + "%";
-		}
+    VolumeService {
+        id: service
+    }
 
-		Process {
-			id: toggleMuteProcess
-			command: ["wpctl", "set-mute", "@DEFAULT_AUDIO_SINK@", "toggle"]
-			running: false
-		}
+    Process {
+        id: toggleMuteProcess
+        command: ["wpctl", "set-mute", "@DEFAULT_AUDIO_SINK@", "toggle"]
+        running: false
+    }
 
-		Process {
-			id: pavucontrolProcess
-			command: ["pavucontrol"]
-			running: false
-		}
+    Process {
+        id: pavucontrolProcess
+        command: ["pavucontrol"]
+        running: false
+    }
+
+    function icon() {
+        if (service.isMuted) {
+            return "\ueee8";
+        } else {
+            if (service.volume < 0.2) {
+                return "\uf026";
+            } else if (service.volume < 0.6) {
+                return "\uf027";
+            } else {
+                return "\uf028";
+            }
+        }	
     }
 }

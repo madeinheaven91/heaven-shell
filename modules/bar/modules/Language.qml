@@ -2,59 +2,136 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
+import "../components"
+import "../../../config"
 
-Rectangle {
+MouseArea {
     id: langRoot
-    implicitWidth: kbDisplay.implicitWidth
-    implicitHeight: bar.totalHeight - 4
-    color: "transparent"
+    hoverEnabled: true
+
+    implicitWidth: rect.implicitWidth
+    implicitHeight: rect.implicitHeight
 
     property var layoutNames: []
     property int layoutIdx: 0
     property bool capsOn: false
     property string shortName: (layoutNames[layoutIdx] || "").substring(0, 2)
 
-    Text {
-        id: kbDisplay
-        anchors.verticalCenter: parent.verticalCenter
-        text: langRoot.capsOn ? langRoot.shortName.toUpperCase() : langRoot.shortName.toLowerCase()
-        color: root.colorFg
-        font.family: root.fontFamily
-        font.pixelSize: root.fontSize
+    Rectangle {
+        id: rect
+        color: BarTheme.colorFg
+        radius: 4
+
+        implicitWidth: row.implicitWidth + 8
+        implicitHeight: row.implicitHeight + 4
+
+        RowLayout {
+            id: row
+            anchors.centerIn: parent
+
+            Text {
+                id: text
+                color: BarTheme.colorBf
+                text: langRoot.shortName.toUpperCase()
+                font: Qt.font({
+                    pixelSize: Theme.textSize - 4,
+                    family: Theme.textFont,
+                    bold: true
+                })
+            }
+
+            Text {
+                visible: capsOn
+                id: icon
+                color: BarTheme.colorBf
+                text: "\udb81\udec3"
+                font: Qt.font({
+                    pixelSize: Theme.textSize - 4,
+                    family: Theme.iconFont,
+                    bold: true
+                })
+            }
+        }
     }
 
-	// emits the full layout list on start, then an event on every switch
-	Process {
-		id: layoutProc
-		command: ["niri", "msg", "--json", "event-stream"]
-		running: true
+    // PopupWindow {
+    //     id: popup
+    //     visible: false
+    //     color: "transparent"
+    //
+    //     implicitWidth: content.implicitWidth + 20
+    //     implicitHeight: content.implicitHeight + 20
+    //
+    //     anchor {
+    //         item: batteryRoot
+    //         rect.x: (batteryRoot.width - popup.implicitWidth) / 2
+    //         rect.y: batteryRoot.height + 6
+    //     }
+    //
+    //
+    //     Rectangle {
+    //         anchors.fill: parent
+    //         radius: 8
+    //         color: Theme.colorTooltip
+    //
+    //         HoverHandler { id: popupHover }
+    //
+    //         ColumnLayout {
+    //             id: content
+    // anchors.centerIn: parent
+    // spacing: 4
+    //
+    // Text {
+    //                 text: batteryRoot.percent + "%"
+    // 	color: "#ffffff"
+    // 	Layout.alignment: Qt.AlignHCenter
+    // 	horizontalAlignment: Text.AlignHCenter
+    //                 font: Theme.boldText
+    // }
+    //
+    // Text {
+    //                 text: batteryRoot.tooltipText
+    // 	color: "#ffffff"
+    // 	Layout.alignment: Qt.AlignHCenter
+    // 	horizontalAlignment: Text.AlignHCenter
+    //                 font: Theme.text
+    // }
+    //         }
+    //     }
+    // }
 
-		stdout: SplitParser {
-			onRead: line => {
-				var ev = JSON.parse(line);
-				if (ev.KeyboardLayoutsChanged) {
-					langRoot.layoutNames = ev.KeyboardLayoutsChanged.keyboard_layouts.names;
-					langRoot.layoutIdx = ev.KeyboardLayoutsChanged.keyboard_layouts.current_idx;
-				} else if (ev.KeyboardLayoutSwitched) {
-					langRoot.layoutIdx = ev.KeyboardLayoutSwitched.idx;
-				}
-			}
-		}
-	}
+    // emits the full layout list on start, then an event on every switch
+    Process {
+        id: layoutProc
+        command: ["niri", "msg", "--json", "event-stream"]
+        running: true
 
-	Process {
-		id: getCaps
-		command: ["sh", "-c", "cat /sys/class/leds/*capslock/brightness | head -n 1"]
+        stdout: SplitParser {
+            onRead: line => {
+                var ev = JSON.parse(line);
+                if (ev.KeyboardLayoutsChanged) {
+                    langRoot.layoutNames = ev.KeyboardLayoutsChanged.keyboard_layouts.names;
+                    langRoot.layoutIdx = ev.KeyboardLayoutsChanged.keyboard_layouts.current_idx;
+                } else if (ev.KeyboardLayoutSwitched) {
+                    langRoot.layoutIdx = ev.KeyboardLayoutSwitched.idx;
+                }
+            }
+        }
+    }
 
-		stdout: SplitParser {
-			onRead: line => langRoot.capsOn = parseInt(line) > 0
-		}
-	}
+    Process {
+        id: getCaps
+        command: ["sh", "-c", "cat /sys/class/leds/*capslock/brightness | head -n 1"]
 
-	Timer {
-		interval: 200
-		running: true
-		repeat: true
-		onTriggered: getCaps.running = true
-	}
+        stdout: SplitParser {
+            onRead: line => langRoot.capsOn = parseInt(line) > 0
+        }
+    }
+
+    Timer {
+        interval: 200
+        running: true
+        repeat: true
+        onTriggered: getCaps.running = true
+    }
 }

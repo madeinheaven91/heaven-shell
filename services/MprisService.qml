@@ -1,15 +1,17 @@
 import QtQuick
+import Quickshell
+import Quickshell.Io
 import Quickshell.Services.Mpris
 
-QtObject {
-    id: mprisService
+Singleton {
+    id: service
 
     property bool hasPlayers: Mpris.players.values.length > 0
     // last player that started playing; stays selected while paused
     property var activePlayer: null
     property string artist: activePlayer ? (activePlayer.trackArtist || "") : ""
     property string title: activePlayer ? (activePlayer.trackTitle || "") : ""
-    property string fullText: artist && title ? artist + " - " + title : title
+    property string fullText: artist && title ? artist + " — " + title : title
 
     function fallbackPlayer() {
         var players = Mpris.players.values;
@@ -32,7 +34,7 @@ QtObject {
             target: modelData
             function onPlaybackStateChanged() {
                 if (modelData.isPlaying)
-                    mprisService.activePlayer = modelData;
+                    service.activePlayer = modelData;
             }
         }
     }
@@ -40,8 +42,8 @@ QtObject {
     property var playerWatcher: Connections {
         target: Mpris.players
         function onValuesChanged() {
-            if (Mpris.players.values.indexOf(mprisService.activePlayer) === -1)
-                mprisService.activePlayer = mprisService.fallbackPlayer();
+            if (Mpris.players.values.indexOf(service.activePlayer) === -1)
+                service.activePlayer = service.fallbackPlayer();
         }
     }
 

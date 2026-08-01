@@ -3,7 +3,7 @@ import Quickshell
 import Quickshell.Io
 
 Singleton {
-    id: root
+    id: service
     
     property bool monitorEnabled: true
     property real volume: 0.0
@@ -32,22 +32,22 @@ Singleton {
 				var parts = line.trim().split(/\s+/)
 				var vol = parseFloat(parts[1])
 				if (!isNaN(vol)) {
-					root.volume = Math.round(vol * 100) / 100
+					service.volume = Math.round(vol * 100) / 100
 				}
-				root.isMuted = line.includes("MUTED")
+				service.isMuted = line.includes("MUTED")
 			}
 		}
 	}
     
     Process {
         id: monitor
-        running: root.monitorEnabled
+        running: service.monitorEnabled
         command: ["pw-mon"]
         
         stdout: SplitParser {
             onRead: line => {
                 if (line.includes("changed") || line.includes("Props")) {
-                    if (root.monitorEnabled) {
+                    if (service.monitorEnabled) {
                         getVolumeProcess.running = true
                         // getIsMutedProcess.running = true
                     }

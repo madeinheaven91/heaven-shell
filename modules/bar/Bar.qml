@@ -1,87 +1,107 @@
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Effects
 import Quickshell
 import "./modules"
-import "./components"
+import "../../config"
 
 PanelWindow {
     id: bar
-	property int padding: 10
-	property int borderWidth: 2
-	property int totalHeight: 30
+
+    readonly property int barHeight: 32
 
     anchors {
         top: true
-        right: true
         left: true
+        right: true
     }
-	margins {
-		top: 4
-		right: 4
-		left: 4
-	}
-    implicitHeight: bar.totalHeight
-
+    // taller than the bar so the shadow has room to render below it;
+    // exclusiveZone/mask keep the extra space from reserving area or eating clicks
+    implicitHeight: barHeight + 60
+    exclusiveZone: barHeight
+    mask: Region {
+        item: rect
+    }
     color: "transparent"
 
-    Rectangle {
-		id: statusBar
+    RectangularShadow {
+        visible: Theme.barShadow
+        anchors.fill: rect
+        offset.x: 0
+        offset.y: 0
+        radius: rect.radius
+        blur: 10
+        spread: 5
+        color: Qt.darker(rect.color, 1.6)
+    }
 
-        color: root.colorBg
-        anchors.fill: parent
-        topRightRadius: root.borderRadius
-        bottomRightRadius: root.borderRadius
-        bottomLeftRadius: root.borderRadius
-        topLeftRadius: root.borderRadius
-		border.width: bar.borderWidth
+    Rectangle {
+        id: rect
+        anchors {
+            top: parent.top
+            left: parent.left
+            right: parent.right
+        }
+        height: bar.barHeight
+        color: BarTheme.colorBg
 
         // left
         RowLayout {
             anchors {
                 left: parent.left
-                leftMargin: 25
+                leftMargin: 24
                 verticalCenter: parent.verticalCenter
             }
-            spacing: 25
+            spacing: 24
 
-			Loader { active: true; sourceComponent: 
-				Workspaces {}
-			}
-			Loader { active: true; sourceComponent: 
-				Mpris {
-					service: MprisService{}
-				}
-			}
+            Text {
+                text: ""
+                color: BarTheme.colorFg
+                font.family: Theme.iconFont
+                font.pixelSize: Theme.bigIconSize
+            }
+
+            Workspaces {
+                visible: Theme.workspacesModuleEnabled
+            }
         }
 
         // center
         RowLayout {
-            anchors {
-                horizontalCenter: parent.horizontalCenter
-                verticalCenter: parent.verticalCenter
+            anchors.centerIn: parent
+
+            Mpris {
+                visible: Theme.mprisModuleEnabled && available
             }
-
-            Loader { active: true; sourceComponent: Time {} }
-
         }
 
         // right
         RowLayout {
             anchors {
-                verticalCenter: parent.verticalCenter
                 right: parent.right
-                rightMargin: 25
+                rightMargin: 24
+                verticalCenter: parent.verticalCenter
             }
-            spacing: 25
+            spacing: 24
 
-            Loader { active: true; sourceComponent: Tray { window: bar } }
-            Loader { active: true; sourceComponent: Volume { service: VolumeService {} } }
-            Loader { active: true; sourceComponent: WifiComponent { service: WifiService {} } }
-			// Text { text: "|"; font { pixelSize: root.fontSize; family: root.fontFamily } }
-			
-			// Loader { active: true; sourceComponent: Power {} }
-            Loader { active: true; sourceComponent: Power {} }
-            Loader { active: true; sourceComponent: Language {} }
+            Tray {
+                visible: Theme.trayModuleEnabled
+            }
+            Language {
+                visible: Theme.langModuleEnabled
+            }
+            Battery {
+                visible: Theme.batteryModuleEnabled && available
+            }
+            Wifi {
+                visible: Theme.wifiModuleEnabled
+            }
+            Volume {
+                visible: Theme.volumeModuleEnabled
+            }
+            Settings { }
+            Time { }
         }
     }
+
 }
