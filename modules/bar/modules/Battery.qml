@@ -14,29 +14,39 @@ MouseArea {
 
     readonly property var device: UPower.displayDevice
     readonly property int percent: Math.round(device.percentage * 100)
-    readonly property bool charging: device.state === UPowerDeviceState.Charging
-                                     || device.state === UPowerDeviceState.FullyCharged
+    readonly property bool charging: device.state === UPowerDeviceState.Charging || device.state === UPowerDeviceState.FullyCharged
 
     // hide on desktops / when no battery present
     visible: device.isLaptopBattery && device.isPresent
 
     function batteryIcon() {
-        if (percent >= 90) return ""       // full
-        else if (percent >= 65) return ""  // three quarters
-        else if (percent >= 40) return ""  // half
-        else if (percent >= 15) return ""  // quarter
-        else return ""                     // empty
+        if (percent >= 90)
+            return "";
+            // full
+        else if (percent >= 65)
+            return "";
+            // three quarters
+        else if (percent >= 40)
+            return "";
+            // half
+        else if (percent >= 15)
+            return "";
+            // quarter
+        else
+            return "";                     // empty
     }
 
     function fmtTime(secs) {
-        if (!secs || secs <= 0) return "";
+        if (!secs || secs <= 0)
+            return "";
         var h = Math.floor(secs / 3600);
         var m = Math.floor((secs % 3600) / 60);
         return h > 0 ? (h + "h " + m + "m") : (m + "m");
     }
 
     readonly property string tooltipText: {
-        if (device.state === UPowerDeviceState.FullyCharged) return "Fully charged";
+        if (device.state === UPowerDeviceState.FullyCharged)
+            return "Fully charged";
         if (charging) {
             var t = fmtTime(device.timeToFull);
             return t ? (t + " until full") : "Charging…";
@@ -52,14 +62,18 @@ MouseArea {
 
         Text {
             text: batteryRoot.batteryIcon()
-            color: (batteryRoot.percent <= 15 && !batteryRoot.charging)
-                   ? "#e0533d" : Theme.colorFg
-            font: Theme.icon
+            color: (batteryRoot.percent <= 15 && !batteryRoot.charging) ? Theme.colorPanic : Theme.colorFg
+            font: Qt.font({
+                family: Theme.iconFont,
+                pixelSize: Theme.iconSize + 4
+            })
         }
     }
 
     property bool hovered: batteryRoot.containsMouse || popupHover.hovered
-    onHoveredChanged: { popup.visible = hovered; }
+    onHoveredChanged: {
+        popup.visible = hovered;
+    }
 
     PopupWindow {
         id: popup
@@ -75,34 +89,35 @@ MouseArea {
             rect.y: batteryRoot.height + 6
         }
 
-
         Rectangle {
             anchors.fill: parent
             radius: 8
-            color: "#ee2b2b2b"
+            color: Qt.alpha(Theme.colorTooltip, Theme.tooltipOpacity)
 
-            HoverHandler { id: popupHover }
+            HoverHandler {
+                id: popupHover
+            }
 
             ColumnLayout {
                 id: content
-				anchors.centerIn: parent
-				spacing: 4
+                anchors.centerIn: parent
+                spacing: 4
 
-				Text {
+                Text {
                     text: batteryRoot.percent + "%"
-					color: "#ffffff"
-					Layout.alignment: Qt.AlignHCenter
-					horizontalAlignment: Text.AlignHCenter
+                    color: "#ffffff"
+                    Layout.alignment: Qt.AlignHCenter
+                    horizontalAlignment: Text.AlignHCenter
                     font: Theme.boldText
-				}
+                }
 
-				Text {
+                Text {
                     text: batteryRoot.tooltipText
-					color: "#ffffff"
-					Layout.alignment: Qt.AlignHCenter
-					horizontalAlignment: Text.AlignHCenter
+                    color: "#ffffff"
+                    Layout.alignment: Qt.AlignHCenter
+                    horizontalAlignment: Text.AlignHCenter
                     font: Theme.text
-				}
+                }
             }
         }
     }

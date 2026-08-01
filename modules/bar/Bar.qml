@@ -17,7 +17,7 @@ PanelWindow {
 
     Rectangle {
         anchors.fill: parent
-        color: Theme.colorBar
+        color: Qt.alpha(Theme.colorFg, Theme.barOpacity)
 
         // left
         RowLayout {
@@ -29,7 +29,7 @@ PanelWindow {
             spacing: 24
 
             Text {
-                text: "\uf179"
+                text: "\uf313"
                 color: Theme.colorFg
                 font.family: Theme.iconFont
                 font.pixelSize: Theme.bigIconSize
@@ -57,6 +57,7 @@ PanelWindow {
             spacing: 24
 
             Tray {}
+            Language {}
             Battery {}
             Wifi {}
             Volume {}

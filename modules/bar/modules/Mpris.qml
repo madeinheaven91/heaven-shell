@@ -4,169 +4,175 @@ import Quickshell
 import "../../../services"
 import "../../../config"
 
-Rectangle {
-	id: mprisRoot
-	property int charLimit: 64
-	readonly property var service: mprisService
-	readonly property var player: service.activePlayer
+MouseArea {
+    id: mprisRoot
+    implicitWidth: inner.implicitWidth
+    implicitHeight: inner.implicitHeight
+    property int charLimit: 64
+    readonly property var player: mprisService.activePlayer
+    visible: player !== null && inner.text !== ""
+    hoverEnabled: true
+    cursorShape: Qt.PointingHandCursor
+    onClicked: if (mprisRoot.player)
+        mprisRoot.player.togglePlaying()
 
-	implicitWidth: inner.implicitWidth
-	implicitHeight: inner.implicitHeight
-	color: "transparent"
-	visible: player !== null && inner.text !== ""
+    // keep the popup open while hovering either the bar text or the popup,
+    // with a grace period to move the mouse between them
+    property bool hovered: mprisRoot.containsMouse || popupHover.hovered
+    onHoveredChanged: {
+        if (hovered) {
+            hideTimer.stop();
+            popup.visible = true;
+        } else {
+            hideTimer.restart();
+        }
+    }
 
-	MprisService { id: mprisService }
-
-	function formatTime(seconds) {
-		if (seconds === undefined || isNaN(seconds) || seconds < 0)
-			return "0:00";
-		var m = Math.floor(seconds / 60);
-		var s = Math.floor(seconds % 60);
-		return m + ":" + (s < 10 ? "0" : "") + s;
-	}
-
-	Text {
-		id: inner
-		anchors.centerIn: parent
+    Text {
+        id: inner
+        anchors.centerIn: parent
         font: Theme.text
-		color: mprisRoot.player && mprisRoot.player.isPlaying
-			   ? Theme.colorFg : Qt.alpha(Theme.colorFg, 0.5)
-		text: {
-			var t = mprisService.title;
-			if (t.length > mprisRoot.charLimit)
-				t = t.substring(0, mprisRoot.charLimit) + "...";
-			return t;
-		}
-	}
+        color: mprisRoot.player && mprisRoot.player.isPlaying ? Theme.colorFg : Qt.alpha(Theme.colorFg, 0.5)
+        text: {
+            var t = mprisService.title;
+            if (t.length > mprisRoot.charLimit)
+                t = t.substring(0, mprisRoot.charLimit) + "...";
+            return t;
+        }
+    }
 
-	MouseArea {
-		id: hoverArea
-		anchors.fill: parent
-		hoverEnabled: true
-		cursorShape: Qt.PointingHandCursor
-		onClicked: if (mprisRoot.player) mprisRoot.player.togglePlaying()
-	}
+    PopupWindow {
+        id: popup
+        color: "transparent"
 
-	// keep the popup open while hovering either the bar text or the popup,
-	// with a grace period to move the mouse between them
-	property bool hovered: hoverArea.containsMouse || popupHover.hovered
-	onHoveredChanged: {
-		if (hovered) {
-			hideTimer.stop();
-			popup.visible = true;
-		} else {
-			hideTimer.restart();
-		}
-	}
+        anchor {
+            item: mprisRoot
+            rect.x: (mprisRoot.width - popup.implicitWidth) / 2
+            rect.y: mprisRoot.height + 8
+        }
 
-	Timer {
-		id: hideTimer
-		interval: 300
-		onTriggered: popup.visible = false
-	}
+        implicitWidth: 400
+        implicitHeight: content.implicitHeight + 20
 
-	// player.position only updates on seek; poke it while the popup is visible
-	Timer {
-		running: popup.visible && mprisRoot.player !== null && mprisRoot.player.isPlaying
-		interval: 1000
-		repeat: true
-		triggeredOnStart: true
-		onTriggered: mprisRoot.player.positionChanged()
-	}
+        Rectangle {
+            anchors.fill: parent
+            radius: 8
+            color: Qt.alpha(Theme.colorTooltip, Theme.tooltipOpacity)
 
-	PopupWindow {
-		id: popup
-		visible: false
-		color: "transparent"
+            HoverHandler {
+                id: popupHover
+            }
 
-		anchor {
-			item: mprisRoot
-			rect.x: (mprisRoot.width - popup.implicitWidth) / 2
-			rect.y: mprisRoot.height + 6
-		}
+            ColumnLayout {
+                id: content
+                anchors.centerIn: parent
+                width: parent.width - 20
+                spacing: 4
 
-		implicitWidth: 400
-		implicitHeight: content.implicitHeight + 24
+                Text {
+                    Layout.alignment: Qt.AlignHCenter
+                    Layout.maximumWidth: popup.implicitWidth - 20
+                    elide: Text.ElideRight
+                    text: mprisRoot.player ? (mprisRoot.player.trackTitle || "Unknown") : ""
+                    color: "#ffffff"
+                    font {
+                        family: Theme.textFont
+                        pixelSize: Theme.textSize
+                        bold: true
+                    }
+                }
 
-		Rectangle {
-			anchors.fill: parent
-			radius: 8
-			color: "#ee2b2b2b"
+                Text {
+                    visible: text !== ""
+                    Layout.alignment: Qt.AlignHCenter
+                    Layout.maximumWidth: popup.implicitWidth - 20
+                    elide: Text.ElideRight
+                    text: mprisRoot.player ? (mprisRoot.player.trackArtist || "") : ""
+                    color: Qt.alpha("#ffffff", 0.6)
+                    font {
+                        family: Theme.textFont
+                        pixelSize: Theme.textSize - 4
+                    }
+                }
 
-			HoverHandler { id: popupHover }
+                Text {
+                    Layout.alignment: Qt.AlignHCenter
+                    text: mprisRoot.player ? mprisRoot.formatTime(mprisRoot.player.position) + " / " + mprisRoot.formatTime(mprisRoot.player.length) : ""
+                    color: "#ffffff"
+                    font {
+                        family: Theme.textFont
+                        pixelSize: Theme.textSize - 4
+                    }
+                }
 
-			ColumnLayout {
-				id: content
-				anchors.centerIn: parent
-				width: parent.width - 20
-				spacing: 4
+                RowLayout {
+                    Layout.alignment: Qt.AlignHCenter
+                    spacing: 20
 
-				Text {
-					Layout.alignment: Qt.AlignHCenter
-					Layout.maximumWidth: popup.implicitWidth - 20
-					elide: Text.ElideRight
-					text: mprisRoot.player ? (mprisRoot.player.trackTitle || "Unknown") : ""
-					color: "#ffffff"
-					font { family: Theme.textFont; pixelSize: Theme.textSize; bold: true }
-				}
-
-				Text {
-					visible: text !== ""
-					Layout.alignment: Qt.AlignHCenter
-					Layout.maximumWidth: popup.implicitWidth - 20
-					elide: Text.ElideRight
-					text: mprisRoot.player ? (mprisRoot.player.trackArtist || "") : ""
-					color: Qt.alpha("#ffffff", 0.6)
-					font { family: Theme.textFont; pixelSize: Theme.textSize - 4 }
-				}
-
-				Text {
-					Layout.alignment: Qt.AlignHCenter
-					text: mprisRoot.player
-						? mprisRoot.formatTime(mprisRoot.player.position) + " / " + mprisRoot.formatTime(mprisRoot.player.length)
-						: ""
-					color: "#ffffff"
-					font { family: Theme.textFont; pixelSize: Theme.textSize - 4 }
-				}
-
-				RowLayout {
-					Layout.alignment: Qt.AlignHCenter
-					spacing: 20
-
-					Text {
-						text: "󰒮"
-						color: mprisRoot.player && mprisRoot.player.canGoPrevious ? "#ffffff" : Qt.alpha("#ffffff", 0.4)
+                    Text {
+                        text: "󰒮"
+                        color: mprisRoot.player && mprisRoot.player.canGoPrevious ? "#ffffff" : Qt.alpha("#ffffff", 0.4)
                         font: Theme.icon
-						MouseArea {
-							anchors.fill: parent
-							cursorShape: Qt.PointingHandCursor
-							onClicked: if (mprisRoot.player) mprisRoot.player.previous()
-						}
-					}
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: if (mprisRoot.player)
+                                mprisRoot.player.previous()
+                        }
+                    }
 
-					Text {
-						text: mprisRoot.player && mprisRoot.player.isPlaying ? "󰏤" : "󰐊"
-						color: "#ffffff"
+                    Text {
+                        text: mprisRoot.player && mprisRoot.player.isPlaying ? "󰏤" : "󰐊"
+                        color: "#ffffff"
                         font: Theme.icon
-						MouseArea {
-							anchors.fill: parent
-							cursorShape: Qt.PointingHandCursor
-							onClicked: if (mprisRoot.player) mprisRoot.player.togglePlaying()
-						}
-					}
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: if (mprisRoot.player)
+                                mprisRoot.player.togglePlaying()
+                        }
+                    }
 
-					Text {
-						text: "󰒭"
-						color: mprisRoot.player && mprisRoot.player.canGoNext ? "#ffffff" : Qt.alpha("#ffffff", 0.4)
+                    Text {
+                        text: "󰒭"
+                        color: mprisRoot.player && mprisRoot.player.canGoNext ? "#ffffff" : Qt.alpha("#ffffff", 0.4)
                         font: Theme.icon
-						MouseArea {
-							anchors.fill: parent
-							cursorShape: Qt.PointingHandCursor
-							onClicked: if (mprisRoot.player) mprisRoot.player.next()
-						}
-					}
-				}
-			}
-		}
-	}
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: if (mprisRoot.player)
+                                mprisRoot.player.next()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    MprisService {
+        id: mprisService
+    }
+
+    Timer {
+        id: hideTimer
+        interval: 300
+        onTriggered: popup.visible = false
+    }
+
+    // player.position only updates on seek; poke it while the popup is visible
+    Timer {
+        running: popup.visible && mprisRoot.player !== null && mprisRoot.player.isPlaying
+        interval: 1000
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: mprisRoot.player.positionChanged()
+    }
+
+    function formatTime(seconds) {
+        if (seconds === undefined || isNaN(seconds) || seconds < 0)
+            return "0:00";
+        var m = Math.floor(seconds / 60);
+        var s = Math.floor(seconds % 60);
+        return m + ":" + (s < 10 ? "0" : "") + s;
+    }
 }

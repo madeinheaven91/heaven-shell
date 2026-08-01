@@ -7,11 +7,6 @@ RowLayout {
     id: workspacesRoot
     spacing: 6
 
-    Niri {
-        id: niri
-        Component.onCompleted: connect()
-    }
-
     Repeater {
         model: niri.workspaces
 
@@ -37,5 +32,10 @@ RowLayout {
                 onClicked: niri.focusWorkspaceById(ws.model.id)
             }
         }
+    }
+
+    Niri {
+        id: niri
+        Component.onCompleted: connect()
     }
 }

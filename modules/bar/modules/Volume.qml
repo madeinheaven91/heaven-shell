@@ -6,28 +6,35 @@ import "../components"
 import "../../../services"
 import "../../../config"
 
-Rectangle {
+MouseArea {
     id: root
-
     implicitWidth: row.implicitWidth
     implicitHeight: row.implicitHeight
-	color: "transparent"
+    acceptedButtons: Qt.LeftButton | Qt.RightButton
+    cursorShape: Qt.PointingHandCursor
+    onClicked: mouse => {
+        if (mouse.button === Qt.LeftButton) {
+            toggleMuteProcess.running = true;
+        } else {
+            pavucontrolProcess.running = true;
+        }
+    }
+
+    RowLayout {
+		id: row
+
+        Text {
+            text: icon();
+            font: Theme.icon;
+        }
+        Text {
+            text: Number(service.volume * 100).toFixed(0) + "%";
+            font: Theme.boldText;
+        }
+    }
 
     VolumeService {
         id: service
-    }
-
-    MouseArea {
-        anchors.fill: parent
-        acceptedButtons: Qt.LeftButton | Qt.RightButton
-        cursorShape: Qt.PointingHandCursor
-        onClicked: mouse => {
-            if (mouse.button === Qt.LeftButton) {
-                toggleMuteProcess.running = true;
-            } else {
-                pavucontrolProcess.running = true;
-            }
-        }
     }
 
     Process {
@@ -54,19 +61,5 @@ Rectangle {
                 return "\uf028";
             }
         }	
-    }
-
-    RowLayout {
-		id: row
-
-        Text {
-            text: icon();
-            font: Theme.icon;
-        }
-
-        Text {
-            text: Number(service.volume * 100).toFixed(0) + "%";
-            font: Theme.text;
-        }
     }
 }
