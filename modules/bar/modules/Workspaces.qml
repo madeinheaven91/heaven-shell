@@ -18,9 +18,9 @@ RowLayout {
             implicitHeight: 8
             radius: height / 2
             color: model.isFocused
-                   ? Theme.colorFg
-                   : (model.isActive ? Qt.alpha(Theme.colorFg, 0.55)
-                                     : Qt.alpha(Theme.colorFg, 0.25))
+                   ? BarTheme.colorFg
+                   : (model.isActive ? Qt.alpha(BarTheme.colorFg, 0.55)
+                                     : Qt.alpha(BarTheme.colorFg, 0.25))
 
             Behavior on implicitWidth {
                 NumberAnimation { duration: 150; easing.type: Easing.OutCubic }

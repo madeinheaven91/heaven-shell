@@ -25,11 +25,13 @@ MouseArea {
 
         Text {
             text: icon();
-            font: Theme.icon;
+            color: BarTheme.colorFg
+            font: Theme.icon
         }
         Text {
-            text: Number(service.volume * 100).toFixed(0) + "%";
-            font: Theme.boldText;
+            text: Number(service.volume * 100).toFixed(0) + "%"
+            color: BarTheme.colorFg
+            font: Theme.boldText
         }
     }
 

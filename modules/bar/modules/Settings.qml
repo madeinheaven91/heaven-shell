@@ -6,7 +6,7 @@ import "../../settings"
 Text {
     id: settingsButton
     text: "\uf1de"
-    color: Theme.colorFg
+    color: BarTheme.colorFg
     font: Theme.icon
 
     MouseArea {

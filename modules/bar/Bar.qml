@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Effects
 import Quickshell
 import "./modules"
 import "../../config"
@@ -7,17 +8,42 @@ import "../../config"
 PanelWindow {
     id: bar
 
+    readonly property int barHeight: 32
+
     anchors {
         top: true
         left: true
         right: true
     }
-    implicitHeight: 32
+    // taller than the bar so the shadow has room to render below it;
+    // exclusiveZone/mask keep the extra space from reserving area or eating clicks
+    implicitHeight: barHeight + 60
+    exclusiveZone: barHeight
+    mask: Region {
+        item: rect
+    }
     color: "transparent"
 
+    RectangularShadow {
+        visible: Theme.barShadow
+        anchors.fill: rect
+        offset.x: 0
+        offset.y: 0
+        radius: rect.radius
+        blur: 10
+        spread: 5
+        color: Qt.darker(rect.color, 1.6)
+    }
+
     Rectangle {
-        anchors.fill: parent
-        color: Qt.alpha(Theme.colorFg, Theme.barOpacity)
+        id: rect
+        anchors {
+            top: parent.top
+            left: parent.left
+            right: parent.right
+        }
+        height: bar.barHeight
+        color: BarTheme.colorBg
 
         // left
         RowLayout {
@@ -29,23 +55,25 @@ PanelWindow {
             spacing: 24
 
             Text {
-                text: "\uf313"
-                color: Theme.colorFg
+                text: ""
+                color: BarTheme.colorFg
                 font.family: Theme.iconFont
                 font.pixelSize: Theme.bigIconSize
             }
 
-            Workspaces {}
+            Workspaces {
+                visible: Theme.workspacesModuleEnabled
+            }
         }
-
 
         // center
         RowLayout {
             anchors.centerIn: parent
 
-            Mpris {}
+            Mpris {
+                visible: Theme.mprisModuleEnabled && available
+            }
         }
-
 
         // right
         RowLayout {
@@ -56,13 +84,24 @@ PanelWindow {
             }
             spacing: 24
 
-            Tray {}
-            Language {}
-            Battery {}
-            Wifi {}
-            Volume {}
-            Settings {}
-            Time {}
+            Tray {
+                visible: Theme.trayModuleEnabled
+            }
+            Language {
+                visible: Theme.langModuleEnabled
+            }
+            Battery {
+                visible: Theme.batteryModuleEnabled && available
+            }
+            Wifi {
+                visible: Theme.wifiModuleEnabled
+            }
+            Volume {
+                visible: Theme.volumeModuleEnabled
+            }
+            Settings { }
+            Time { }
         }
     }
+
 }

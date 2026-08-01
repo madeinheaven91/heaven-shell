@@ -5,6 +5,6 @@ import "../../../config"
 Text {
     id: settingsButton
     text: "\ue68f"
-    color: Theme.colorFg
+    color: BarTheme.colorFg
     font: Theme.icon
 }

@@ -25,11 +25,12 @@ MouseArea {
         id: row
 
         Text {
+            visible: !showSpeed
             font: Theme.icon
+            color: BarTheme.colorFg
             text: {
                 wifiService.isEthernetConnected ? "\udb80\ude00" : "\uf1eb";
             }
-            visible: !showSpeed
         }
 
         RowLayout {
@@ -41,6 +42,7 @@ MouseArea {
                 id: duIcon
                 font: Theme.icon
                 text: "\uf0ec"
+                color: BarTheme.colorFg
                 rotation: 90
             }
             ColumnLayout {
@@ -51,7 +53,7 @@ MouseArea {
                         family: Theme.textFont,
                         pixelSize: 12
                     })
-                    color: Theme.colorFg
+                    color: BarTheme.colorFg
                     text: wifiRoot.formatSpeed(wifiService.uploadSpeed)
                 }
                 Text {
@@ -60,7 +62,7 @@ MouseArea {
                         family: Theme.textFont,
                         pixelSize: 12
                     })
-                    color: Theme.colorFg
+                    color: BarTheme.colorFg
                     text: wifiRoot.formatSpeed(wifiService.downloadSpeed)
                 }
             }

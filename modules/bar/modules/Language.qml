@@ -19,7 +19,7 @@ MouseArea {
 
     Rectangle {
         id: rect
-        color: Theme.colorFg
+        color: BarTheme.colorFg
         radius: 4
 
         implicitWidth: row.implicitWidth + 8
@@ -31,7 +31,7 @@ MouseArea {
 
             Text {
                 id: text
-                color: Theme.colorBg
+                color: BarTheme.colorBf
                 text: langRoot.shortName.toUpperCase()
                 font: Qt.font({
                     pixelSize: Theme.textSize - 4,
@@ -43,7 +43,7 @@ MouseArea {
             Text {
                 visible: capsOn
                 id: icon
-                color: Theme.colorBg
+                color: BarTheme.colorBf
                 text: "\udb81\udec3"
                 font: Qt.font({
                     pixelSize: Theme.textSize - 4,

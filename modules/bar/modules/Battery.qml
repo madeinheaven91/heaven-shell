@@ -16,8 +16,9 @@ MouseArea {
     readonly property int percent: Math.round(device.percentage * 100)
     readonly property bool charging: device.state === UPowerDeviceState.Charging || device.state === UPowerDeviceState.FullyCharged
 
-    // hide on desktops / when no battery present
-    visible: device.isLaptopBattery && device.isPresent
+    // present only on laptops with a battery; Bar combines this with the
+    // theme toggle to decide visibility
+    readonly property bool available: device.isLaptopBattery && device.isPresent
 
     function batteryIcon() {
         if (percent >= 90)
@@ -62,7 +63,7 @@ MouseArea {
 
         Text {
             text: batteryRoot.batteryIcon()
-            color: (batteryRoot.percent <= 15 && !batteryRoot.charging) ? Theme.colorPanic : Theme.colorFg
+            color: (batteryRoot.percent <= 15 && !batteryRoot.charging) ? Theme.colorPanic : BarTheme.colorFg
             font: Qt.font({
                 family: Theme.iconFont,
                 pixelSize: Theme.iconSize + 4

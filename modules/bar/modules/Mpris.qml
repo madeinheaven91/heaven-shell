@@ -10,7 +10,9 @@ MouseArea {
     implicitHeight: inner.implicitHeight
     property int charLimit: 64
     readonly property var player: mprisService.activePlayer
-    visible: player !== null && inner.text !== ""
+    // true when something is actually playing; Bar combines this with the
+    // theme toggle to decide visibility
+    readonly property bool available: player !== null && inner.text !== ""
     hoverEnabled: true
     cursorShape: Qt.PointingHandCursor
     onClicked: if (mprisRoot.player)
@@ -32,7 +34,7 @@ MouseArea {
         id: inner
         anchors.centerIn: parent
         font: Theme.text
-        color: mprisRoot.player && mprisRoot.player.isPlaying ? Theme.colorFg : Qt.alpha(Theme.colorFg, 0.5)
+        color: mprisRoot.player && mprisRoot.player.isPlaying ? BarTheme.colorFg : Qt.alpha(BarTheme.colorFg, 0.5)
         text: {
             var t = mprisService.title;
             if (t.length > mprisRoot.charLimit)
@@ -57,7 +59,7 @@ MouseArea {
         Rectangle {
             anchors.fill: parent
             radius: 8
-            color: Qt.alpha(Theme.colorTooltip, Theme.tooltipOpacity)
+            color: Theme.tooltipAlpha
 
             HoverHandler {
                 id: popupHover
